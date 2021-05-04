@@ -1,0 +1,16 @@
+{
+  "name": "taobao-get-buyer-orders",
+  "version": "1.0.0",
+  "description": "获取淘宝买家订单脚本",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/One-h/taobao-get-buyer-orders.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/One-h/taobao-get-buyer-orders/issues"
+  },
+  "homepage": "https://github.com/One-h/taobao-get-buyer-orders#readme"
+}
