@@ -4,8 +4,8 @@ let interval;
 
 // 淘宝有验证机制，如果太快操作会弹出验证码
 // 设置每页等待时间及随机时间，单位毫秒
-let nextPageWaitTime = 15000;
-let nextPageRandomTime = 10000;
+let nextPageWaitTime = 5000;
+let nextPageRandomTime = 5000;
 // 设置页面加载时间及随机时间，如果网络偏慢需要设置长时间
 let loadWaitTime = 5000;
 let loadRandomTime = 5000;
@@ -108,7 +108,28 @@ function getNextPageOrder() {
         finish()
         return;
     }
-    nextButton.click();
+    let {x,y} = nextButton.getBoundingClientRect();
+    x = Math.floor(x);
+    y = Math.floor(y);
+
+    let ev = new MouseEvent("click",{
+        screenX:1452,
+        screenY:486,
+        clientX: x,
+        clientY: y,
+        button: 1,
+        x: x,
+        y: y,
+        offsetX:x,
+        offsetY:y,
+        pageX:x,
+        pageY:y,
+        layerX:x,
+        layerY:y,
+    })
+    ev.initEvent("click", true, true);
+    nextButton.dispatchEvent(ev);
+    
     setTimeout(getCurrentOrder, getRandomTime(loadWaitTime, loadRandomTime));
 }
 
