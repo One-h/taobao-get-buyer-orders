@@ -1,18 +1,18 @@
 let list = [];
 let csv;
-let interval;
 
 // 淘宝有验证机制，如果太快操作会弹出验证码
 // 设置每页等待时间及随机时间，单位毫秒
 let nextPageWaitTime = 5000;
 let nextPageRandomTime = 5000;
-// 设置页面加载时间及随机时间，如果网络偏慢需要设置长时间
-let loadWaitTime = 5000;
-let loadRandomTime = 5000;
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 // 获取当前页面的订单数据，并push到list内。
 function getCurrentOrder() {
-    console.log('start current page')
+    console.log('get current page\'s data')
     let nodeList = document.getElementsByClassName('js-order-container');
 
     for (let i of nodeList) {
@@ -86,7 +86,7 @@ function getCurrentOrder() {
 
         list.push(order);
     }
-    return list;
+    return;
 }
 
 // 获取’下一页‘的button
@@ -99,57 +99,69 @@ function getRandomTime(time, random) {
     return time + Math.floor(random * Math.random())
 }
 
-// 前往下一页并定时开启获取下一页数据
-function getNextPageOrder() {
-    console.log('start next page')
-    let nextButton = getNextPageButton();
-    //遍历完成 转成csv格式文本
-    if (nextButton.disabled) {
-        finish()
-        return;
-    }
-    let {x,y} = nextButton.getBoundingClientRect();
+function clickButton(element) {
+    let { x, y } = element.getBoundingClientRect();
     x = Math.floor(x);
     y = Math.floor(y);
 
-    let ev = new MouseEvent("click",{
-        screenX:1452,
-        screenY:486,
+    let ev = new MouseEvent("click", {
+        screenX: 1452,
+        screenY: 486,
         clientX: x,
         clientY: y,
         button: 1,
         x: x,
         y: y,
-        offsetX:x,
-        offsetY:y,
-        pageX:x,
-        pageY:y,
-        layerX:x,
-        layerY:y,
+        offsetX: x,
+        offsetY: y,
+        pageX: x,
+        pageY: y,
+        layerX: x,
+        layerY: y,
     })
     ev.initEvent("click", true, true);
-    nextButton.dispatchEvent(ev);
-    
-    setTimeout(getCurrentOrder, getRandomTime(loadWaitTime, loadRandomTime));
+    element.dispatchEvent(ev);
+}
+
+// 前往下一页并定时开启获取下一页数据
+async function getNextPageOrder() {
+    let nextButton = getNextPageButton();
+    while (!nextButton.disabled) {
+        console.log('go to next page')
+        clickButton(nextButton);
+
+        await sleep(500);
+        while (checkLoading()) {
+            await sleep(500);
+        }
+        await sleep(500);
+        getCurrentOrder();
+
+        await sleep(getRandomTime(nextPageWaitTime, nextPageRandomTime));
+    }
+    //遍历完成 转成csv格式文本
+    finish()
+}
+
+// 判断是否在加载
+function checkLoading() {
+    // loading-mod__loading___3nGTY loading-mod__hidden___1tIoI 当loading图标隐藏时候,会出现loading-mod__hidden___1tIoI的class
+    return [...document.getElementsByClassName("loading-mod__loading___3nGTY")[0].classList].find(x => x.indexOf("hidden") >= 1) ? false : true;
 }
 
 // 当全部订单完成后，执行输出操作
-function finish(){
+function finish() {
     console.log('finish')
-    clearInterval(interval);
-
-    //打印list 对象
-    //console.log(toCSV(list));
     //打印csv文本
     csv = toCSV(list)
     console.log(csv);
 
 
-    
+
 }
 
 //复制csv文本进剪切板
-function copyCSV(){
+function copyCSV() {
     let copy = function (e) {
         e.preventDefault();
         console.log('copy');
@@ -167,11 +179,11 @@ function copyCSV(){
 
 
 // 获取所有订单信息
-function getAllOrder() {
+async function getAllOrder() {
     console.log('start getAllOrder');
     getCurrentOrder();
 
-    interval = setInterval(getNextPageOrder, getRandomTime(nextPageWaitTime, nextPageRandomTime));
+    await getNextPageOrder();
 
 }
 
@@ -180,34 +192,34 @@ function getAllOrder() {
 // 可以注释掉不需要的字段，需要上下一起注释。
 function toCSV(data) {
     let s = "日期," +
-    "订单号," +
-    "商品名," +
-    "分类," +
-    "单价," +
-    "数量," +
-    "商品状态," +
-    "总价," +
-//    "订单状态," +
-//    "店铺名," +
-//    "订单url," +
-//    "商品url," +
-//    "快照url," +
-    "\n";
+        "订单号," +
+        "商品名," +
+        "分类," +
+        "单价," +
+        "数量," +
+        "商品状态," +
+        "总价," +
+        "订单状态," +
+        //    "店铺名," +
+        //    "订单url," +
+        //    "商品url," +
+        //    "快照url," +
+        "\n";
     return s + data.map(order => {
         return order.subOrders.map((item, index) => {
             return `${index == 0 ? order.date : ''},` +
-            `="${index == 0 ? order.id : ''}",` +
-            `${item.text},`+
-            `${item.skuText},` +
-            `${item.realTotalPrice},` +
-            `${item.quantity},` +
-            `${item.status},` +
-            `${index == 0 ? order.actualFee : ''},` +
-//            `${index == 0 ? order.status : ''},` +
-//            `${index == 0 ? order.seller : ''},` +
-//            `${index == 0 ? order.orderDetailUrl : ''},` +
-//            `${item.itemUrl},${item.snapShot??''},` +
-            `\n`
+                `="${index == 0 ? order.id : ''}",` +
+                `${item.text},` +
+                `${item.skuText},` +
+                `${item.realTotalPrice},` +
+                `${item.quantity},` +
+                `${item.status},` +
+                `${index == 0 ? order.actualFee : ''},` +
+                `${index == 0 ? order.status : ''},` +
+                //            `${index == 0 ? order.seller : ''},` +
+                //            `${index == 0 ? order.orderDetailUrl : ''},` +
+                //            `${item.itemUrl},${item.snapShot??''},` +
+                `\n`
         }).join('');
     }).join('');
 }
